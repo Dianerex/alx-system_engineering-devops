@@ -1,4 +1,2 @@
-#!/usr/bin/env bash
-# Displays its own PID.
-
-echo $$
+#!/usr/bin/env ruby
+puts ARGV[0].scan(/Holberton/).join
