@@ -22,22 +22,22 @@ audit_subdomains() {
     # Loop through the subdomains
     for sub in $subdomains; do
         if [ -z "$subdomain" ] || [ "$subdomain" == "$sub" ]; then
-            # Use dig to fetch DNS information and awk to extract relevant data
-            dig_output=$(dig +short "$sub.$domain" | tail -n1)
-            if [ -n "$dig_output" ]; then
-                display_subdomain_info "$sub" "$domain" "A" "$dig_output"
-            fi
+            # Use awk to extract DNS information from a file
+            awk -v sub="$sub" '$1 == sub { print $2, $3 }' "$domain_dns_file" | while read record_type destination; do
+                display_subdomain_info "$sub" "$domain" "$record_type" "$destination"
+            done
         fi
     done
 }
 
 # Main script logic
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <domain> [subdomain]"
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <domain> <dns_file> [subdomain]"
     exit 1
 fi
 
 domain="$1"
-subdomain="$2"
+domain_dns_file="$2"
+subdomain="$3"
 
 audit_subdomains "$domain" "$subdomain"
