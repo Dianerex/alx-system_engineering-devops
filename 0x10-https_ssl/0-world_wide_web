@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # script to report information about server domains
+# shellcheck disable=SC2086
 
-display_subdomain_info() {
-    local subdomain="$1"
+display_subdomain_info() {    local subdomain="$1"
     local domain="$2"
     local record_type="$3"
     local destination="$4"
@@ -17,25 +17,25 @@ audit_subdomains() {
     # Define the list of subdomains to check
     subdomains="www lb-01 web-01 web-02"
 
-    # Loop through the subdomains
-    for sub in $subdomains; do
-        if [ -z "$subdomain" ] || [ "$subdomain" == "$sub" ]; then
-            # Use dig to fetch DNS information and awk to extract relevant data
-            dig_output=$(dig +short "$sub.$domain" | tail -n1)
-            if [ -n "$dig_output" ]; then
-                display_subdomain_info "$sub" "$domain" "A" "$dig_output"
-            fi
-        fi
-    done
+   if [ -z "$1" ]; then
+		exit
+	fi
+	# no sub domain specified, do all
+	if [ -z "$2" ]; then
+		echo "$SUBDOMAINS" | awk -v domain="$1"\
+		'BEGIN { RS=" " }
+		{split($0,ARR," ");
+		cmd = "dig " ARR[1]"."domain " | grep -A1 \"ANSWER SECTION:\" | tail -n1";
+		system(cmd)
+		close(cmd)}' | awk\
+		'{
+		split($0, DOMS, ".");
+		print "The subdomain " DOMS[1] " is a " $4 " record and points to " $5}'
+	else
+		dig "$2.$1" | grep -A1 "ANSWER SECTION:" | tail -n1 | awk\
+		'{
+		split($0, DOMS, ".");
+		print "The subdomain " DOMS[1] " is a " $4 " record and points to " $5}'
+	fi
 }
-
-# Main script logic
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <domain> [subdomain]"
-    exit 1
-fi
-
-domain="$1"
-subdomain="$2"
-
-audit_subdomains "$domain" "$subdomain"
+check_domain "$1" "$2"
